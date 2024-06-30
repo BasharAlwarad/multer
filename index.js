@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 app.set('view engine', 'ejs');
@@ -32,6 +33,20 @@ app.post('/upload', upload.single('image'), (req, res) => {
   res.status(201).send('Image uploaded successfully');
 });
 
+app.get('/images', (req, res) => {
+  fs.readdir('./images', (err, files) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Server error');
+    }
+
+    const images = files.map((file) => `/images/${file}`);
+    res.render('images', { images });
+  });
+});
+
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
 app.listen(8000, () => {
-  console.log('Server started on port 8000');
+  console.log('Server on  http://localhost:8000');
 });
