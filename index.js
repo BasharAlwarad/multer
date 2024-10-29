@@ -1,19 +1,28 @@
-const express = require('express');
+import express, { json } from 'express';
+import { join, extname, dirname } from 'path';
+import multer, { diskStorage } from 'multer';
+import { readdir } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
+import { fileURLToPath } from 'url';
+import cors from 'cors';
+import { config } from 'dotenv';
+
+config();
+const PORT = process.env.PORT;
 const app = express();
-const path = require('path');
-const multer = require('multer');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
+app.use(json(), cors({ origin: '*' }));
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', join(__dirname, 'views'));
 
-const storage = multer.diskStorage({
+const storage = diskStorage({
   destination: function (req, file, cb) {
     cb(null, './images');
   },
   filename: function (req, file, cb) {
-    const uniqueFilename = `${uuidv4()}${path.extname(file.originalname)}`;
+    const uniqueFilename = `${uuidv4()}${extname(file.originalname)}`;
     cb(null, uniqueFilename);
   },
 });
@@ -29,24 +38,24 @@ app.get('/upload', (req, res) => {
 });
 
 app.post('/upload', upload.single('image'), (req, res) => {
-  console.log(req.file);
   res.status(201).send('Image uploaded successfully');
 });
 
 app.get('/images', (req, res) => {
-  fs.readdir('./images', (err, files) => {
+  readdir('./images', (err, files) => {
     if (err) {
       console.error(err);
       return res.status(500).send('Server error');
     }
 
-    const images = files.map((file) => `/images/${file}`);
+    const images =
+      files && files.length ? files.map((file) => `/images/${file}`) : [];
     res.render('images', { images });
   });
 });
 
-app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use('/images', express.static(join(__dirname, 'images')));
 
-app.listen(8000, () => {
-  console.log('Server on  http://localhost:8000');
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
